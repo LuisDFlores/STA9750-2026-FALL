@@ -62,3 +62,6 @@ txhousing |>
   geom_line() + 
   ggtitle("Annual Houses Sold in Houston, TX")
 ```
+
+if(!require("usethis")) install.packages("usethis")
+usethis::git_sitrep()
