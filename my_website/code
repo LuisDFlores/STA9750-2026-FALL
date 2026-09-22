@@ -1,0 +1,89 @@
+
+
+---
+title: "Luis Flores"
+about:
+  template: trestles
+  image: image2.jpg
+  links:
+    - icon: github
+      text: GitHub
+      href: https://github.com/LuisDFlores
+---
+
+## About Me
+
+I am a graduate student at Baruch College pursuing an M.S. in Statistics with a concentration in Data Science. I previously earned a B.S. in Computer Science from John Jay College.
+
+My background includes software development, healthcare, and data analytics. I am interested in using data, statistics, and technology to solve practical problems and make better decisions.
+
+I am currently developing my skills in statistics, data science, Python, SQL, and R, with interests in healthcare analytics, technology, and financial services.
+
+
+## Education
+
+**Baruch College** | New York, NY  
+M.S. Statistics, Concentration in Data Science  
+Jan 2026 - June 2028
+
+**John Jay College** | New York, NY  
+B.S. Computer Science  
+Jan 2017 - June 2021
+
+## Experience
+
+**NYU Langone Hospital** | Logistics Analyst  
+Oct 2026 - Present
+
+**NYU Langone Hospital** | Pharmacy Technician  
+Jan 2025 - Oct 2026
+
+---
+## Education
+
+**Baruch College** | New York, NY  
+M.S. Statistics, Concentration in Data Science  
+Jan 2026 - June 2028
+
+**John Jay College** | New York, NY  
+B.S. Computer Science  
+Jan 2017 - June 2021
+
+## Experience
+
+**NYU Langone Hospital** | Logistics Analyst  
+Oct 2026 - Present
+
+**NYU Langone Hospital** | Pharmacy Technician  
+Jan 2025 - Oct 2026
+
+
+:::
+
+### This content appears below the formatted about page content.
+
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+if(!require("leaflet")){
+    options(repos=c(CRAN="https://cloud.r-project.org"))
+    install.packages("leaflet")
+    stopifnot(require("leaflet"))
+}
+
+baruch_longitude <- -73.98333
+baruch_latitude  <- +40.74028
+
+leaflet() |>
+  addTiles() |>
+  setView(baruch_longitude, baruch_latitude, zoom=17) |>
+  addPopups(baruch_longitude, baruch_latitude, 
+            "I am a Master's student at <b>Baruch College</b>!")
+
+
+
+
+```

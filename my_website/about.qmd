@@ -1,0 +1,49 @@
+---
+title: "About Me"
+---
+
+I am a graduate student at Baruch College pursuing an M.S. in Statistics with a concentration in Data Science. I previously earned a B.S. in Computer Science from John Jay College.
+
+I am currently developing my skills in statistics, data science, Python, SQL, and R, with interests in healthcare analytics, technology, and financial services.
+
+## Education
+
+**Baruch College**  
+M.S. Statistics, Concentration in Data Science  
+January 2026 – June 2028
+
+**John Jay College of Criminal Justice**  
+B.S. Computer Science  
+January 2017 – June 2021
+
+## Interests
+
+- Data Science
+- Statistical Analysis
+- Healthcare Analytics
+- Technology
+- Financial Services
+- Python and R
+- SQL
+
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+if(!require("leaflet")){
+    options(repos=c(CRAN="https://cloud.r-project.org"))
+    install.packages("leaflet")
+    stopifnot(require("leaflet"))
+}
+
+baruch_longitude <- -73.98333
+baruch_latitude  <- +40.74028
+
+leaflet() |>
+  addTiles() |>
+  setView(baruch_longitude, baruch_latitude, zoom=17) |>
+  addPopups(baruch_longitude, baruch_latitude, 
+            "I am a Master's student at <b>Baruch College</b>!")
+```
