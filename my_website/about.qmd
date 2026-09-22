@@ -25,6 +25,7 @@ January 2017 – June 2021
 - Financial Services
 - Python and R
 - SQL
+- c++
 
 
 ```{r}
