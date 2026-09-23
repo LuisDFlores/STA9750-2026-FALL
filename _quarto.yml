@@ -1,0 +1,35 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "STA 9750 Submission Material"
+  description: "Course Projects for STA 9750 at Baruch College"
+  site-url: "https://github.com/LuisDFlores/STA9750-2026-FALL"
+
+  navbar:
+    background: primary
+    search: false
+    left:
+      - href: index.qmd
+        text: Home
+      - href: about.qmd
+        text: About
+      - text: Mini-Projects
+        menu:
+          - href: mp01.qmd
+            text: Mini-Project 1
+          - href: mp02.qmd
+            text: Mini-Project 2
+          - href: mp03.qmd
+            text: Mini-Project 3
+          - href: mp04.qmd
+            text: Mini-Project 4
+
+format:
+  html:
+    theme: solar
+    toc: false
+
+editor:
+  mode: source
