@@ -1,5 +1,208 @@
+
 ---
-title: "Mini-Project Placeholder"
+title: "Mini-Project 01 - What We Watched: Exploring Netflix Viewing Data"
+author: "LuisDFlores"
+editor:
+    mode: source
+format:
+    html:
+        code-fold: true
 ---
 
-This is a placeholder for STA9750 Mini-Project 1. Check back soon for more!
+## Introduction
+
+In this mini-project, I will identify which Netflix titles are most popular among viewers based on the criteria I set up during this project. I prepare and clean the data to perform exploratory data analysis. Summarizing results and identifying potential issues along the way. I will practice and build a more optimize data pipeline for future analysis and projects.
+
+## Data Acquisition and Preparation
+
+load_netflix_data is a function that prepares the data and combines it into a single data set.Removes missing values, cleans title names and identifies events. All of information is organized in netflix_data.
+
+```{r}
+
+load_netflix_data <- function(){
+
+  library(tidyverse)
+  library(rvest)
+  library(readxl)
+  library(fs)
+  
+  data_dir <- path("data", "mp01")
+    
+  if(!dir_exists(data_dir)){
+    dir_create(data_dir, showWarnings=FALSE, recurse=TRUE)
+  }
+  
+  NETFLIX_URLS <- list(
+    `2023H1` = "https://about.netflix.com/news/what-we-watched-a-netflix-engagement-report",
+    `2023H2` = "https://about.netflix.com/news/what-we-watched-the-second-half-of-2023",
+    `2024H1` = "https://about.netflix.com/news/what-we-watched-the-first-half-of-2024",
+    `2024H2` = "https://about.netflix.com/news/what-we-watched-the-second-half-of-2024",
+    `2025H1` = "https://about.netflix.com/news/what-we-watched-the-first-half-of-2025",
+    `2025H2` = "https://about.netflix.com/news/what-we-watched-the-second-half-of-2025",
+    `2026H1` = "https://about.netflix.com/news/what-we-watched-the-first-half-of-2026"
+  )
+  
+  download_if_needed <- function(url, local){
+    if(!file_exists(local)){
+      download.file(url, local, quiet = TRUE, mode = "wb")
+    }
+    
+    return(local)
+  }
+    
+  NETFLIX_URLS |> 
+    map(read_html) |> 
+    map(html_element, xpath = "//a[contains(@href, '.xlsx')]") |> 
+    map_chr(html_attr, "href") |> 
+    enframe("period", "url") |> 
+   mutate(path = path(data_dir, paste0(period, ".xlsx")), 
+          path = map2(url, path, download_if_needed), 
+          data = map(path, read_excel, skip=3, na="*"), 
+          data = map(data, \(x) x |> mutate(`Release Date` = as.Date(`Release Date`)))) |>
+    unnest(data) |> 
+    select(-url, -path) |> 
+    mutate(year=str_sub(period, 1, 4), 
+           half=str_sub(period, start=6), 
+           period_start = make_date(year, if_else(half==1, 1, 7), 1), 
+           period_end = make_date(year, if_else(half==1, 6, 12), if_else(half==1, 30, 31))) |> 
+    filter(!is.na(`Hours Viewed`)) |> 
+    mutate(live_event = !is.na(Runtime) & str_detect(Runtime, "\\d+:\\d+\\*"), 
+           clean_time = str_remove(Runtime, fixed("*")),
+           Runtime = 60 * hour(hm(clean_time)) + minute(hm(clean_time))) |>
+    select(-clean_time) |>
+    mutate(Runtime = coalesce(Runtime, mean(Runtime, na.rm=TRUE)), 
+           .by=Title, 
+           Title = stringi::stri_trans_general(Title, "Latin-ASCII"),
+           Title = str_remove(Title, " // .*"), 
+           Title = str_remove(Title, "[^[:ascii:]].*"), 
+           Title = str_trim(Title)) |>
+    filter_out(Title == "") |>
+    select(year, 
+           period, 
+           period_start, 
+           period_end, 
+           Title, 
+           -half, 
+           Runtime, 
+           Views, 
+           `Hours Viewed`, 
+           `Release Date`,
+           `Available Globally?`, 
+           live_event)
+}
+
+netflix_data <- load_netflix_data()
+
+```
+### Exploratory Analysis
+
+
+## Initial Observation
+
+Dates and release dates as date variables, run time and hours viewed as numeric variables, and live_event as a logical variable. However, year is currently stored as a character variable, and global availability is also stored as text. These variables may need to be converted to more appropriate types before analysis.View count records are missing and will need to be addressed before attempting to determine popularity rankings.
+
+```{r}
+glimpse(netflix_data)
+```
+Renamed inconsistent variable names and converted year and available_globally to appropriate data types so R can recognize them as intended.
+
+```{r}
+
+netflix_data <- netflix_data |>
+  rename(
+         title = Title,
+         hours_viewed = `Hours Viewed`, 
+         release_date  = `Release Date`,
+         available_globally = `Available Globally?`
+        )
+
+names(netflix_data)
+
+netflix_data <- netflix_data |>
+  mutate(
+    year = as.integer(year),
+    available_globally = available_globally == "Yes"
+  )
+
+str(netflix_data)
+
+```
+
+Verified the variable name and type changes while beginning to explore the data set by randomly selecting 10 rows. Avaliability globally might have an i,pact on views as more consumers can view the content. Views and hours_viewed are the parameters I want to focus on to determine what shows are more popular. Can potentially filter out all non avaliable globally to see how much the numbers change, or even see if theres any change.
+
+```{r}
+netflix_data |> slice_sample(n = 10)
+```
+
+
+The completion rates show that year and hours_viewed have no missing values. This makes it reliable.Run time is about 78.9% complete and Views is about 70.6% complete. This means that a significant portion of the data is missing.
+
+```{r}
+library(skimr)
+skim(netflix_data)
+```
+
+```{r}
+library(gt)
+
+netflix_data |>
+  #Removing other shows category, it appeared on top 10 list and didnt make sense to include it.
+  filter(title != "Other Shows") |>
+  group_by(title) |>
+  summarize(
+    reporting_records = n(),
+    #removing unavailable data
+    total_hours_viewed = sum(hours_viewed, na.rm = TRUE),
+    average_hours_viewed = mean(hours_viewed, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  #descending order
+  arrange(desc(total_hours_viewed)) |>
+  slice_head(n = 10) |>
+  gt() |>
+  cols_move_to_end(reporting_records) |>
+  cols_label(
+    title = md("**Title**"),
+    total_hours_viewed = md("**Total Hours Viewed**"),
+    average_hours_viewed = md("**Average Hours Viewed**"),
+    reporting_records = md("*Number of Reports*")
+  ) |>
+  tab_header(
+    title = "Netflix's Most Popular Titles",
+    subtitle = "Top 10 titles ranked by total hours viewed"
+  ) |>
+  tab_source_note(
+    md("Source: Netflix engagement reports, 2023–2026.")
+  ) |>
+  fmt_number(
+    columns = c(total_hours_viewed, average_hours_viewed),
+    decimals = 0,
+    use_seps = TRUE
+  )
+
+```
+
+
+## Final Insights and Deliverable
+
+Code related to the final deliverable of the assignment goes here. 
+
+#' Acquire Netflix What We Watched Reports
+#' 
+#' This function will acquire and standardize all data for MP#01
+#' from Netflix. Because Netflix hosts the data files behind a CDN, we
+#' are accessing the release pages and automatically extracting links to the
+#' relevant files (with CDN hash). 
+#' 
+#' After import, files are stacked vertically and some basic cleaning is
+#' performed. 
+
+
+
+------------------------------------------------------------------------
+
+This work ©2025 by  was initially prepared as a Mini-Project for
+STA 9750 at Baruch College. More details about this course can be found at
+[the course site](https://michael-weylandt.com/STA9750) and instructions for
+this assignment can be found at 
+[MP #01](https://michael-weylandt.com/STA9750/mini/mini01.html)
