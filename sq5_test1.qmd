@@ -1,0 +1,26 @@
+---
+title: "sq5_test1"
+format: html
+---
+
+```{r}
+library(tidyverse)
+
+dsny_data <- read_csv("data/sq5_test/DSNY_Monthly_Tonnage_Data_20260930.csv")
+
+
+head(dsny_data)
+```
+```{r}
+dsny_data <- dsny_data |>
+  mutate(
+    MONTH = as.Date(
+      paste0(gsub(" / ", "-", MONTH), "-01")
+    )
+  )
+```
+
+
+```{r}
+range(dsny_data$MONTH, na.rm = TRUE)
+```

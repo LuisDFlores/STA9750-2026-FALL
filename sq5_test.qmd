@@ -1,0 +1,15 @@
+---
+title: "Mini-Project 01 - What We Watched: Exploring Netflix Viewing Data"
+author: "LuisDFlores"
+editor:
+    mode: source
+format:
+    html:
+        code-fold: true
+---
+
+library(tidyverse)
+
+dsny_data <- read_csv("data/sq5_test/DSNY_Monthly_Tonnage_Data_20260930.csv")
+
+head(dsny_data)
