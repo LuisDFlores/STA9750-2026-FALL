@@ -11,7 +11,7 @@ format:
 
 ## Introduction
 
-Netflix is always looking to gain an advantage in the streaming wars. Although its corporate strategy is not public, we can make inferences based on its public information avaliable. Netflix has published a "What We Watched" data set every six months since the beginning of 2023. I will perform exploratory data analysis on a data sets.I will prepare and clean mismatched variables. I will identify which Netflix titles are most popular among viewers based on the reliable parameters identified. Summarizing results and identifying potential issues along the way. I will practice and build a more optimize data pipeline for future analysis and projects.
+Netflix is always looking to gain an advantage in the streaming wars. Although its corporate strategy is not public, we can make analyze their performance metrics and make inferences on to why based on its public information available. Netflix has published a "What We Watched" data set every six months since the beginning of 2023. Exploratory data analysis will be performed on the combined data sets.Mismatched variables will be properly prepared to match data types and cleaned to filter missing values.The purpose of this project is to identify which Netflix titles are most popular among viewers based on the reliable parameters identified. Summarizing results and identifying potential issues along the way. I will practice and build a more optimize data pipeline for future analysis and projects.
 
 ## Data Acquisition and Preparation
 
@@ -19,12 +19,17 @@ load_netflix_data is a function that prepares the data and combines it into a si
 
 ```{r}
 load_netflix_data <- function(){
+  #| label: setup
+#| include: false
 
+suppressPackageStartupMessages({
   library(tidyverse)
   library(rvest)
   library(readxl)
   library(fs)
   library(scales)
+})
+ 
   
   data_dir <- path("data", "mp01")
     
@@ -97,13 +102,13 @@ netflix_data <- load_netflix_data()
 
 **Initial Observation**
 
-Dates and release dates are formatted as date variables, run time and hours viewed as numeric variables, and live_event as a logical variable. However, year is currently stored as a character variable, and global availability is also stored as text. These variables may need to be converted to more appropriate types before analysis.View count records are missing and will need to be addressed before attempting to determine popularity rankings.
+Dates and release dates are formatted as date variables, run time and hours viewed as numeric variables, and live_event as a logical variable. However, year is currently stored as a character variable, and global availability is also stored as text. These variables may need to be converted to more appropriate types before analysis. View count records are missing and will need to be addressed before attempting to determine popularity rankings.
 
 ```{r}
-names(netflix_data)
+summary(netflix_data)
 ```
 
-Renamed inconsistent variable names and converted year and available_globally to appropriate data types so R   can recognize them as intended.
+Renamed inconsistent variable names and converted year and available_globally to appropriate data types so R can recognize them as intended.
 
 ```{r}
 netflix_data <- netflix_data |>
@@ -131,6 +136,11 @@ netflix_data |> slice_sample(n = 10)
 
 
 The completion rates show that year and hours_viewed have no missing values. This makes it reliable.Run time is about 78.9% complete and Views is about 70.6% complete. This means that a significant portion of the data is missing.
+
+```{r}
+library(skimr)
+skim(netflix_data)
+```
 
 Formatting data to be digested easily.
 
@@ -176,7 +186,7 @@ netflix_data |>
 
 ### Exploratory Questions - Inline Values
 
-**Question 1: ****What date range is covered by this data set?**
+**What date range is covered by this data set?**
 
 ```{r}
 netflix_data |>
@@ -189,7 +199,7 @@ netflix_data |>
 The data set covers the period from `r min(netflix_data$period_start, na.rm = TRUE)` to `r max(netflix_data$period_end, na.rm = TRUE)`.
 
 
-**Question 2: How many different shows and movies are covered in this data set?**
+**How many different shows and movies are covered in this data set?**
 
 
 ```{r}
@@ -200,12 +210,12 @@ netflix_data |>
 There are  `r n_distinct(netflix_data$title)` different shows and movies.
 
 
-**Question 3: How many total hours have been spent watching shows from the Bridgerton universe?**
+**How many total hours have been spent watching shows from the Bridgerton universe?**
 
 `r scales::comma(netflix_data |> filter(stringr::str_detect(title, "Bridgerton")) |> summarize(total_hours = sum(hours_viewed, na.rm = TRUE)) |> pull(total_hours))` hours have been spent watching titles from the Bridgerton universe.
 
 
-**Question 4: How many total hours have been spent watching the five seasons of Stranger Things??**
+**How many total hours have been spent watching the five seasons of Stranger Things??**
 
 ```{r}
 netflix_data |>
@@ -225,7 +235,7 @@ stranger_things |>
 
 Total hours spent watching the five seasons of stranger things is `r scales::comma(stranger_things |> summarize(total_hours = sum(hours_viewed, na.rm = TRUE)) |> pull(total_hours))`.
 
-**Question 5: What percentage of total watch time was spent on the Top 10 titles of 2026H1?**
+**What percentage of total watch time was spent on the Top 10 titles of 2026H1?**
 
 ```{r}
 h1_2026_top_10 <- netflix_data |>
@@ -244,7 +254,7 @@ The percentage of total watch time of the top 10 titles in H1 2026 is `r percent
 
 
 
-**Question 6: What fraction of Netflix’s catalog is globally available?**
+**What fraction of Netflix’s catalog is globally available?**
 
 ```{r}
 results <- netflix_data |>
@@ -265,7 +275,7 @@ Netflix’s catalog is `r round(results$title_percent, 2)`% globally available b
 
 ### Exploratory Questions - Table Answers
 
-**Question 1 : What was the top title (by total hours viewed) in each period and what fraction of total viewership did it capture?**
+**What was the top title (by total hours viewed) in each period and what fraction of total viewership did it capture?**
 
 Finding total hours viewed by summing each period, then taking individual titles and dividing them to find viewership share.
 
@@ -336,7 +346,7 @@ top_titles |>
   )
 ```
 
-**Question 2 : How has Netflix’s catalog changed in size over the periods for which we have data? You should consider both the number of titles and the total runtime of content?**
+**How has Netflix’s catalog changed in size over the periods for which we have data? You should consider both the number of titles and the total runtime of content?**
 
 ```{r}
 catalog_summary <- netflix_data |>
@@ -467,7 +477,7 @@ ggplot(catalog_summary, aes(x = period, group = 1)) +
 
 The number of titles significantly decreased from 2023H1 to 2023H2. After that change number of titles has increased at a smaller consistent rate. Run time has been consistently slowly increasing. 
 
-**Question 3 : Which titles have had the most consistently high viewership across all periods? These shows are likely to be ‘staples’ that viewers fall back on as ‘comfort food’, e.g., re-runs of Friends.**
+**Which titles have had the most consistently high viewership across all periods? These shows are likely to be ‘staples’ that viewers fall back on as ‘comfort food’, e.g., re-runs of Friends.**
 
 Calculate the mean, minimum and standard deviation. To distinguish strong consisted viewership, rather than big spikes.
 
@@ -533,7 +543,7 @@ ggplot(
 
 No surprise to see breaking bad and Lucifer on the list. The Filter list ensures high viewership with low variability because of the low SD. Positive association.
 
-**Question 4 : Within each period, what fraction of time was spent on ‘shows’ vs movies?**
+**Within each period, what fraction of time was spent on ‘shows’ vs movies?**
 
 If time is longer than 4 hours, it will mostly be a show. There are very long movies I want to avoid and most show seasons 6-12 episodes. Calculate the percentage of title per total hours viewed.
 
@@ -585,7 +595,7 @@ ggplot(period_type_share,
 
 ```
 
-**Question 5 : How does the performance of live events compare to pre-taped content? Does the average live event draw more viewership than an average piece of pre-taped content? How about a ‘top tier’ live event vs ‘top tier’ pre-taped content?**
+**How does the performance of live events compare to pre-taped content? Does the average live event draw more viewership than an average piece of pre-taped content? How about a ‘top tier’ live event vs ‘top tier’ pre-taped content?**
 
 
 Creating a clear distinction of live content and not

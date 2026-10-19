@@ -202,7 +202,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>Netflix is always looking to gain an advantage in the streaming wars. Although its corporate strategy is not public, we can make inferences based on its public information avaliable. Netflix has published a “What We Watched” data set every six months since the beginning of 2023. I will perform exploratory data analysis on a data sets.I will prepare and clean mismatched variables. I will identify which Netflix titles are most popular among viewers based on the reliable parameters identified. Summarizing results and identifying potential issues along the way. I will practice and build a more optimize data pipeline for future analysis and projects.</p>
+<p>Netflix is always looking to gain an advantage in the streaming wars. Although its corporate strategy is not public, we can make analyze their performance metrics and make inferences on to why based on its public information available. Netflix has published a “What We Watched” data set every six months since the beginning of 2023. Exploratory data analysis will be performed on the combined data sets.Mismatched variables will be properly prepared to match data types and cleaned to filter missing values.The purpose of this project is to identify which Netflix titles are most popular among viewers based on the reliable parameters identified. Summarizing results and identifying potential issues along the way. I will practice and build a more optimize data pipeline for future analysis and projects.</p>
 </section>
 <section id="data-acquisition-and-preparation" class="level2">
 <h2 class="anchored" data-anchor-id="data-acquisition-and-preparation">Data Acquisition and Preparation</h2>
@@ -211,143 +211,135 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <details class="code-fold">
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>load_netflix_data <span class="ot">&lt;-</span> <span class="cf">function</span>(){</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(rvest)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(readxl)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(fs)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(scales)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  data_dir <span class="ot">&lt;-</span> <span class="fu">path</span>(<span class="st">"data"</span>, <span class="st">"mp01"</span>)</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="sc">!</span><span class="fu">dir_exists</span>(data_dir)){</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">dir_create</span>(data_dir, <span class="at">showWarnings=</span><span class="cn">FALSE</span>, <span class="at">recurse=</span><span class="cn">TRUE</span>)</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  NETFLIX_URLS <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2023H1</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-a-netflix-engagement-report"</span>,</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2023H2</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-second-half-of-2023"</span>,</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2024H1</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-first-half-of-2024"</span>,</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2024H2</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-second-half-of-2024"</span>,</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2025H1</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-first-half-of-2025"</span>,</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2025H2</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-second-half-of-2025"</span>,</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2026H1</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-first-half-of-2026"</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  download_if_needed <span class="ot">&lt;-</span> <span class="cf">function</span>(url, local){</span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">file_exists</span>(local)){</span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>      <span class="fu">download.file</span>(url, local, <span class="at">quiet =</span> <span class="cn">TRUE</span>, <span class="at">mode =</span> <span class="st">"wb"</span>)</span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(local)</span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>  NETFLIX_URLS <span class="sc">|&gt;</span> </span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map</span>(read_html) <span class="sc">|&gt;</span> </span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map</span>(html_element, <span class="at">xpath =</span> <span class="st">"//a[contains(@href, '.xlsx')]"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map_chr</span>(html_attr, <span class="st">"href"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">enframe</span>(<span class="st">"period"</span>, <span class="st">"url"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>   <span class="fu">mutate</span>(<span class="at">path =</span> <span class="fu">path</span>(data_dir, <span class="fu">paste0</span>(period, <span class="st">".xlsx"</span>)), </span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>          <span class="at">path =</span> <span class="fu">map2</span>(url, path, download_if_needed), </span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> <span class="fu">map</span>(path, read_excel, <span class="at">skip=</span><span class="dv">3</span>, <span class="at">na=</span><span class="st">"*"</span>), </span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> <span class="fu">map</span>(data, \(x) x <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Release Date</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">as.Date</span>(<span class="st">`</span><span class="at">Release Date</span><span class="st">`</span>)))) <span class="sc">|&gt;</span></span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    <span class="fu">unnest</span>(data) <span class="sc">|&gt;</span> </span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>url, <span class="sc">-</span>path) <span class="sc">|&gt;</span> </span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">year=</span><span class="fu">str_sub</span>(period, <span class="dv">1</span>, <span class="dv">4</span>), </span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>           <span class="at">half=</span><span class="fu">str_sub</span>(period, <span class="at">start=</span><span class="dv">6</span>), </span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>           <span class="at">period_start =</span> <span class="fu">make_date</span>(year, <span class="fu">if_else</span>(half<span class="sc">==</span><span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">7</span>), <span class="dv">1</span>), </span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>           <span class="at">period_end =</span> <span class="fu">make_date</span>(year, <span class="fu">if_else</span>(half<span class="sc">==</span><span class="dv">1</span>, <span class="dv">6</span>, <span class="dv">12</span>), <span class="fu">if_else</span>(half<span class="sc">==</span><span class="dv">1</span>, <span class="dv">30</span>, <span class="dv">31</span>))) <span class="sc">|&gt;</span> </span>
-<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="st">`</span><span class="at">Hours Viewed</span><span class="st">`</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">live_event =</span> <span class="sc">!</span><span class="fu">is.na</span>(Runtime) <span class="sc">&amp;</span> <span class="fu">str_detect</span>(Runtime, <span class="st">"</span><span class="sc">\\</span><span class="st">d+:</span><span class="sc">\\</span><span class="st">d+</span><span class="sc">\\</span><span class="st">*"</span>), </span>
-<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>           <span class="at">clean_time =</span> <span class="fu">str_remove</span>(Runtime, <span class="fu">fixed</span>(<span class="st">"*"</span>)),</span>
-<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>           <span class="at">Runtime =</span> <span class="dv">60</span> <span class="sc">*</span> <span class="fu">hour</span>(<span class="fu">hm</span>(clean_time)) <span class="sc">+</span> <span class="fu">minute</span>(<span class="fu">hm</span>(clean_time))) <span class="sc">|&gt;</span></span>
-<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>clean_time) <span class="sc">|&gt;</span></span>
-<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Runtime =</span> <span class="fu">coalesce</span>(Runtime, <span class="fu">mean</span>(Runtime, <span class="at">na.rm=</span><span class="cn">TRUE</span>)), </span>
-<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>           <span class="at">.by=</span>Title, </span>
-<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>           <span class="at">Title =</span> stringi<span class="sc">::</span><span class="fu">stri_trans_general</span>(Title, <span class="st">"Latin-ASCII"</span>),</span>
-<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>           <span class="at">Title =</span> <span class="fu">str_remove</span>(Title, <span class="st">" // .*"</span>), </span>
-<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>           <span class="at">Title =</span> <span class="fu">str_remove</span>(Title, <span class="st">"[^[:ascii:]].*"</span>), </span>
-<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>           <span class="at">Title =</span> <span class="fu">str_trim</span>(Title)) <span class="sc">|&gt;</span></span>
-<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter_out</span>(Title <span class="sc">==</span> <span class="st">""</span>) <span class="sc">|&gt;</span></span>
-<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(year, </span>
-<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>           period, </span>
-<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>           period_start, </span>
-<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>           period_end, </span>
-<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>           Title, </span>
-<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>           <span class="sc">-</span>half, </span>
-<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>           Runtime, </span>
-<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>           Views, </span>
-<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>           <span class="st">`</span><span class="at">Hours Viewed</span><span class="st">`</span>, </span>
-<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>           <span class="st">`</span><span class="at">Release Date</span><span class="st">`</span>,</span>
-<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>           <span class="st">`</span><span class="at">Available Globally?</span><span class="st">`</span>, </span>
-<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>           live_event)</span>
-<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>netflix_data <span class="ot">&lt;-</span> <span class="fu">load_netflix_data</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">#| label: setup</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#| include: false</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>({</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(rvest)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(readxl)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(fs)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">library</span>(scales)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  data_dir <span class="ot">&lt;-</span> <span class="fu">path</span>(<span class="st">"data"</span>, <span class="st">"mp01"</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="sc">!</span><span class="fu">dir_exists</span>(data_dir)){</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">dir_create</span>(data_dir, <span class="at">showWarnings=</span><span class="cn">FALSE</span>, <span class="at">recurse=</span><span class="cn">TRUE</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  NETFLIX_URLS <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2023H1</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-a-netflix-engagement-report"</span>,</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2023H2</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-second-half-of-2023"</span>,</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2024H1</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-first-half-of-2024"</span>,</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2024H2</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-second-half-of-2024"</span>,</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2025H1</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-first-half-of-2025"</span>,</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2025H2</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-second-half-of-2025"</span>,</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">2026H1</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"https://about.netflix.com/news/what-we-watched-the-first-half-of-2026"</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>  download_if_needed <span class="ot">&lt;-</span> <span class="cf">function</span>(url, local){</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">file_exists</span>(local)){</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>      <span class="fu">download.file</span>(url, local, <span class="at">quiet =</span> <span class="cn">TRUE</span>, <span class="at">mode =</span> <span class="st">"wb"</span>)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(local)</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>  NETFLIX_URLS <span class="sc">|&gt;</span> </span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map</span>(read_html) <span class="sc">|&gt;</span> </span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map</span>(html_element, <span class="at">xpath =</span> <span class="st">"//a[contains(@href, '.xlsx')]"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">map_chr</span>(html_attr, <span class="st">"href"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    <span class="fu">enframe</span>(<span class="st">"period"</span>, <span class="st">"url"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>   <span class="fu">mutate</span>(<span class="at">path =</span> <span class="fu">path</span>(data_dir, <span class="fu">paste0</span>(period, <span class="st">".xlsx"</span>)), </span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>          <span class="at">path =</span> <span class="fu">map2</span>(url, path, download_if_needed), </span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> <span class="fu">map</span>(path, read_excel, <span class="at">skip=</span><span class="dv">3</span>, <span class="at">na=</span><span class="st">"*"</span>), </span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> <span class="fu">map</span>(data, \(x) x <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="st">`</span><span class="at">Release Date</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">as.Date</span>(<span class="st">`</span><span class="at">Release Date</span><span class="st">`</span>)))) <span class="sc">|&gt;</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    <span class="fu">unnest</span>(data) <span class="sc">|&gt;</span> </span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>url, <span class="sc">-</span>path) <span class="sc">|&gt;</span> </span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">year=</span><span class="fu">str_sub</span>(period, <span class="dv">1</span>, <span class="dv">4</span>), </span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>           <span class="at">half=</span><span class="fu">str_sub</span>(period, <span class="at">start=</span><span class="dv">6</span>), </span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>           <span class="at">period_start =</span> <span class="fu">make_date</span>(year, <span class="fu">if_else</span>(half<span class="sc">==</span><span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">7</span>), <span class="dv">1</span>), </span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>           <span class="at">period_end =</span> <span class="fu">make_date</span>(year, <span class="fu">if_else</span>(half<span class="sc">==</span><span class="dv">1</span>, <span class="dv">6</span>, <span class="dv">12</span>), <span class="fu">if_else</span>(half<span class="sc">==</span><span class="dv">1</span>, <span class="dv">30</span>, <span class="dv">31</span>))) <span class="sc">|&gt;</span> </span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="st">`</span><span class="at">Hours Viewed</span><span class="st">`</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">live_event =</span> <span class="sc">!</span><span class="fu">is.na</span>(Runtime) <span class="sc">&amp;</span> <span class="fu">str_detect</span>(Runtime, <span class="st">"</span><span class="sc">\\</span><span class="st">d+:</span><span class="sc">\\</span><span class="st">d+</span><span class="sc">\\</span><span class="st">*"</span>), </span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>           <span class="at">clean_time =</span> <span class="fu">str_remove</span>(Runtime, <span class="fu">fixed</span>(<span class="st">"*"</span>)),</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>           <span class="at">Runtime =</span> <span class="dv">60</span> <span class="sc">*</span> <span class="fu">hour</span>(<span class="fu">hm</span>(clean_time)) <span class="sc">+</span> <span class="fu">minute</span>(<span class="fu">hm</span>(clean_time))) <span class="sc">|&gt;</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>clean_time) <span class="sc">|&gt;</span></span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Runtime =</span> <span class="fu">coalesce</span>(Runtime, <span class="fu">mean</span>(Runtime, <span class="at">na.rm=</span><span class="cn">TRUE</span>)), </span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>           <span class="at">.by=</span>Title, </span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>           <span class="at">Title =</span> stringi<span class="sc">::</span><span class="fu">stri_trans_general</span>(Title, <span class="st">"Latin-ASCII"</span>),</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>           <span class="at">Title =</span> <span class="fu">str_remove</span>(Title, <span class="st">" // .*"</span>), </span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>           <span class="at">Title =</span> <span class="fu">str_remove</span>(Title, <span class="st">"[^[:ascii:]].*"</span>), </span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>           <span class="at">Title =</span> <span class="fu">str_trim</span>(Title)) <span class="sc">|&gt;</span></span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter_out</span>(Title <span class="sc">==</span> <span class="st">""</span>) <span class="sc">|&gt;</span></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(year, </span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>           period, </span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>           period_start, </span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>           period_end, </span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>           Title, </span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>           <span class="sc">-</span>half, </span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>           Runtime, </span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>           Views, </span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>           <span class="st">`</span><span class="at">Hours Viewed</span><span class="st">`</span>, </span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>           <span class="st">`</span><span class="at">Release Date</span><span class="st">`</span>,</span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>           <span class="st">`</span><span class="at">Available Globally?</span><span class="st">`</span>, </span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>           live_event)</span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a>netflix_data <span class="ot">&lt;-</span> <span class="fu">load_netflix_data</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div class="cell-output cell-output-stderr">
-<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-✔ dplyr     1.2.1     ✔ readr     2.2.0
-✔ forcats   1.0.1     ✔ stringr   1.6.0
-✔ ggplot2   4.0.3     ✔ tibble    3.3.1
-✔ lubridate 1.9.5     ✔ tidyr     1.3.2
-✔ purrr     1.2.2     
-── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-✖ dplyr::filter() masks stats::filter()
-✖ dplyr::lag()    masks stats::lag()
-ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors
-
-Attaching package: 'rvest'
-
-
-The following object is masked from 'package:readr':
-
-    guess_encoding
-
-
-
-Attaching package: 'scales'
-
-
-The following object is masked from 'package:purrr':
-
-    discard
-
-
-The following object is masked from 'package:readr':
-
-    col_factor</code></pre>
-</div>
 </div>
 </section>
 <section id="exploratory-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="exploratory-analysis"><strong>Exploratory Analysis</strong></h2>
 <p><strong>Initial Observation</strong></p>
-<p>Dates and release dates are formatted as date variables, run time and hours viewed as numeric variables, and live_event as a logical variable. However, year is currently stored as a character variable, and global availability is also stored as text. These variables may need to be converted to more appropriate types before analysis.View count records are missing and will need to be addressed before attempting to determine popularity rankings.</p>
+<p>Dates and release dates are formatted as date variables, run time and hours viewed as numeric variables, and live_event as a logical variable. However, year is currently stored as a character variable, and global availability is also stored as text. These variables may need to be converted to more appropriate types before analysis. View count records are missing and will need to be addressed before attempting to determine popularity rankings.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(netflix_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(netflix_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code> [1] "year"                "period"              "period_start"       
- [4] "period_end"          "Title"               "Runtime"            
- [7] "Views"               "Hours Viewed"        "Release Date"       
-[10] "Available Globally?" "live_event"         </code></pre>
+<pre><code>        year             period       period_start          period_end        
+ Length   :61892   Length   :61892   Min.   :2023-01-01   Min.   :2023-06-30  
+ N.unique :    4   N.unique :    7   1st Qu.:2023-01-01   1st Qu.:2023-06-30  
+ N.blank  :    0   N.blank  :    0   Median :2024-01-01   Median :2024-06-30  
+ Min.nchar:    4   Min.nchar:    6   Mean   :2024-04-12   Mean   :2024-10-10  
+ Max.nchar:    4   Max.nchar:    6   3rd Qu.:2025-07-01   3rd Qu.:2025-12-31  
+                                     Max.   :2026-01-01   Max.   :2026-06-30  
+                                                                              
+       Title          Runtime            Views            Hours Viewed      
+ Length   :61892   Min.   :    2.0   Min.   :   100000   Min.   :   100000  
+ N.unique :24427   1st Qu.:  210.0   1st Qu.:   100000   1st Qu.:   500000  
+ N.blank  :    0   Median :  320.0   Median :   400000   Median :  1800000  
+ Min.nchar:    1   Mean   :  467.3   Mean   :  1375241   Mean   :  8265858  
+ Max.nchar:  217   3rd Qu.:  545.0   3rd Qu.:  1200000   3rd Qu.:  6400000  
+                   Max.   :23853.0   Max.   :144800000   Max.   :964100000  
+                   NAs    :13085     NAs    :18198                          
+  Release Date        Available Globally? live_event     
+ Min.   :2010-04-01   Length   :61892     Mode :logical  
+ 1st Qu.:2019-05-31   N.unique :    2     FALSE:61582    
+ Median :2021-06-17   N.blank  :    0     TRUE :310      
+ Mean   :2021-03-25   Min.nchar:    2                    
+ 3rd Qu.:2023-02-14   Max.nchar:    3                    
+ Max.   :2026-06-29   NAs      :    2                    
+ NAs    :35251                                           </code></pre>
 </div>
 </div>
 <p>Renamed inconsistent variable names and converted year and available_globally to appropriate data types so R can recognize them as intended.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>netflix_data <span class="ot">&lt;-</span> netflix_data <span class="sc">|&gt;</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> Title,</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">hours_viewed =</span> <span class="st">`</span><span class="at">Hours Viewed</span><span class="st">`</span>, </span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">release_date  =</span> <span class="st">`</span><span class="at">Release Date</span><span class="st">`</span>,</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">available_globally =</span> <span class="st">`</span><span class="at">Available Globally?</span><span class="st">`</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(netflix_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>netflix_data <span class="ot">&lt;-</span> netflix_data <span class="sc">|&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> Title,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">hours_viewed =</span> <span class="st">`</span><span class="at">Hours Viewed</span><span class="st">`</span>, </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">release_date  =</span> <span class="st">`</span><span class="at">Release Date</span><span class="st">`</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">available_globally =</span> <span class="st">`</span><span class="at">Available Globally?</span><span class="st">`</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(netflix_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code> [1] "year"               "period"             "period_start"      
@@ -357,38 +349,315 @@ The following object is masked from 'package:readr':
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>netflix_data <span class="ot">&lt;-</span> netflix_data <span class="sc">|&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="fu">as.integer</span>(year),</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">available_globally =</span> available_globally <span class="sc">==</span> <span class="st">"Yes"</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>netflix_data <span class="ot">&lt;-</span> netflix_data <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="fu">as.integer</span>(year),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">available_globally =</span> available_globally <span class="sc">==</span> <span class="st">"Yes"</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <p>Verifying the variable name and type changes while beginning to explore the data set by randomly selecting 10 rows. Availability globally might have an impact on views as more consumers can view the content. Views and hours_viewed are the parameters I want to focus on to determine what shows are more popular. Can potentially filter out all non available globally to see how much the numbers change, or even see if there’s any change.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>netflix_data <span class="sc">|&gt;</span> <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>netflix_data <span class="sc">|&gt;</span> <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 10 × 11
     year period period_start period_end title       Runtime   Views hours_viewed
    &lt;int&gt; &lt;chr&gt;  &lt;date&gt;       &lt;date&gt;     &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;        &lt;dbl&gt;
- 1  2025 2025H2 2025-07-01   2025-12-31 Micky Flan…      86  100000       200000
- 2  2023 2023H1 2023-01-01   2023-06-30 Sound of t…      NA      NA       300000
- 3  2023 2023H1 2023-01-01   2023-06-30 Twilight: …      NA      NA       100000
- 4  2025 2025H2 2025-07-01   2025-12-31 Shoot of A…     340  100000       800000
- 5  2023 2023H2 2023-07-01   2023-12-31 Crime Diar…     351  600000      3600000
- 6  2023 2023H2 2023-07-01   2023-12-31 Is my KAWA…     238  100000       300000
- 7  2024 2024H1 2024-01-01   2024-06-30 Sugar Rush…     296  100000       500000
- 8  2025 2025H2 2025-07-01   2025-12-31 The Parisi…     461  100000       900000
- 9  2023 2023H2 2023-07-01   2023-12-31 First Love…     491 1000000      8400000
-10  2023 2023H2 2023-07-01   2023-12-31 Treason: L…     210 6700000     23500000
+ 1  2023 2023H1 2023-01-01   2023-06-30 Charmed (2…     902      NA      4500000
+ 2  2025 2025H2 2025-07-01   2025-12-31 Tiny Prett…     567  500000      4800000
+ 3  2024 2024H2 2024-07-01   2024-12-31 The Hughle…     445  200000      1800000
+ 4  2023 2023H1 2023-01-01   2023-06-30 Wait, My Y…     871      NA      1400000
+ 5  2024 2024H2 2024-07-01   2024-12-31 Blood &amp; Wa…     280  900000      4000000
+ 6  2025 2025H1 2025-01-01   2025-06-30 Pop the Ba…      50 1200000      1000000
+ 7  2024 2024H2 2024-07-01   2024-12-31 My Lovey I…     300  100000       500000
+ 8  2025 2025H2 2025-07-01   2025-12-31 Nurse Jack…     335 2500000     14000000
+ 9  2023 2023H1 2023-01-01   2023-06-30 Princes Of…      NA      NA       200000
+10  2023 2023H1 2023-01-01   2023-06-30 SpongeBob …      NA      NA      4200000
 # ℹ 3 more variables: release_date &lt;date&gt;, available_globally &lt;lgl&gt;,
 #   live_event &lt;lgl&gt;</code></pre>
 </div>
 </div>
 <p>The completion rates show that year and hours_viewed have no missing values. This makes it reliable.Run time is about 78.9% complete and Views is about 70.6% complete. This means that a significant portion of the data is missing.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(skimr)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">skim</span>(netflix_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Data summary</caption>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Name</td>
+<td style="text-align: left;">netflix_data</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Number of rows</td>
+<td style="text-align: left;">61892</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Number of columns</td>
+<td style="text-align: left;">11</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">_______________________</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Column type frequency:</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">character</td>
+<td style="text-align: left;">2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Date</td>
+<td style="text-align: left;">3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">logical</td>
+<td style="text-align: left;">2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">numeric</td>
+<td style="text-align: left;">4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">________________________</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Group variables</td>
+<td style="text-align: left;">None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: character</strong></p>
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 13%">
+<col style="width: 19%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 8%">
+<col style="width: 12%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">skim_variable</th>
+<th style="text-align: right;">n_missing</th>
+<th style="text-align: right;">complete_rate</th>
+<th style="text-align: right;">min</th>
+<th style="text-align: right;">max</th>
+<th style="text-align: right;">empty</th>
+<th style="text-align: right;">n_unique</th>
+<th style="text-align: right;">whitespace</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">period</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">title</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">217</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">24427</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: Date</strong></p>
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 12%">
+<col style="width: 17%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">skim_variable</th>
+<th style="text-align: right;">n_missing</th>
+<th style="text-align: right;">complete_rate</th>
+<th style="text-align: left;">min</th>
+<th style="text-align: left;">max</th>
+<th style="text-align: left;">median</th>
+<th style="text-align: right;">n_unique</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">period_start</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">2023-01-01</td>
+<td style="text-align: left;">2026-01-01</td>
+<td style="text-align: left;">2024-01-01</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">period_end</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">2023-06-30</td>
+<td style="text-align: left;">2026-06-30</td>
+<td style="text-align: left;">2024-06-30</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">release_date</td>
+<td style="text-align: right;">35251</td>
+<td style="text-align: right;">0.43</td>
+<td style="text-align: left;">2010-04-01</td>
+<td style="text-align: left;">2026-06-29</td>
+<td style="text-align: left;">2021-06-17</td>
+<td style="text-align: right;">2487</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: logical</strong></p>
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 26%">
+<col style="width: 14%">
+<col style="width: 19%">
+<col style="width: 7%">
+<col style="width: 32%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">skim_variable</th>
+<th style="text-align: right;">n_missing</th>
+<th style="text-align: right;">complete_rate</th>
+<th style="text-align: right;">mean</th>
+<th style="text-align: left;">count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">available_globally</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.35</td>
+<td style="text-align: left;">FAL: 40171, TRU: 21719</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">live_event</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: left;">FAL: 61582, TRU: 310</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 9%">
+<col style="width: 13%">
+<col style="width: 10%">
+<col style="width: 11%">
+<col style="width: 6%">
+<col style="width: 6%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 9%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">skim_variable</th>
+<th style="text-align: right;">n_missing</th>
+<th style="text-align: right;">complete_rate</th>
+<th style="text-align: right;">mean</th>
+<th style="text-align: right;">sd</th>
+<th style="text-align: right;">p0</th>
+<th style="text-align: right;">p25</th>
+<th style="text-align: right;">p50</th>
+<th style="text-align: right;">p75</th>
+<th style="text-align: right;">p100</th>
+<th style="text-align: left;">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">year</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">2024.11</td>
+<td style="text-align: right;">1.08</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">2024</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2026</td>
+<td style="text-align: left;">▇▅▁▅▂</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Runtime</td>
+<td style="text-align: right;">13085</td>
+<td style="text-align: right;">0.79</td>
+<td style="text-align: right;">467.35</td>
+<td style="text-align: right;">694.71</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">210</td>
+<td style="text-align: right;">320</td>
+<td style="text-align: right;">545</td>
+<td style="text-align: right;">23853</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Views</td>
+<td style="text-align: right;">18198</td>
+<td style="text-align: right;">0.71</td>
+<td style="text-align: right;">1375241.45</td>
+<td style="text-align: right;">3630933.22</td>
+<td style="text-align: right;">100000</td>
+<td style="text-align: right;">100000</td>
+<td style="text-align: right;">400000</td>
+<td style="text-align: right;">1200000</td>
+<td style="text-align: right;">144800000</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">hours_viewed</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">8265858.27</td>
+<td style="text-align: right;">24924226.03</td>
+<td style="text-align: right;">100000</td>
+<td style="text-align: right;">500000</td>
+<td style="text-align: right;">1800000</td>
+<td style="text-align: right;">6400000</td>
+<td style="text-align: right;">964100000</td>
+<td style="text-align: left;">▇▁▁▁▁</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <p>Formatting data to be digested easily.</p>
 <div class="cell">
 <details class="code-fold">
@@ -431,23 +700,23 @@ The following object is masked from 'package:readr':
 <span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
-<div id="rzscicfzej" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#rzscicfzej table {
+<div id="ubearanwyc" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#ubearanwyc table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#rzscicfzej thead, #rzscicfzej tbody, #rzscicfzej tfoot, #rzscicfzej tr, #rzscicfzej td, #rzscicfzej th {
+#ubearanwyc thead, #ubearanwyc tbody, #ubearanwyc tfoot, #ubearanwyc tr, #ubearanwyc td, #ubearanwyc th {
   border-style: none;
 }
 
-#rzscicfzej p {
+#ubearanwyc p {
   margin: 0;
   padding: 0;
 }
 
-#rzscicfzej .gt_table {
+#ubearanwyc .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -473,12 +742,12 @@ The following object is masked from 'package:readr':
   border-left-color: #D3D3D3;
 }
 
-#rzscicfzej .gt_caption {
+#ubearanwyc .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#rzscicfzej .gt_title {
+#ubearanwyc .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -490,7 +759,7 @@ The following object is masked from 'package:readr':
   border-bottom-width: 0;
 }
 
-#rzscicfzej .gt_subtitle {
+#ubearanwyc .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -502,7 +771,7 @@ The following object is masked from 'package:readr':
   border-top-width: 0;
 }
 
-#rzscicfzej .gt_heading {
+#ubearanwyc .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -514,13 +783,13 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#rzscicfzej .gt_bottom_border {
+#ubearanwyc .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#rzscicfzej .gt_col_headings {
+#ubearanwyc .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -535,7 +804,7 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#rzscicfzej .gt_col_heading {
+#ubearanwyc .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -555,7 +824,7 @@ The following object is masked from 'package:readr':
   overflow-x: hidden;
 }
 
-#rzscicfzej .gt_column_spanner_outer {
+#ubearanwyc .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -567,15 +836,15 @@ The following object is masked from 'package:readr':
   padding-right: 4px;
 }
 
-#rzscicfzej .gt_column_spanner_outer:first-child {
+#ubearanwyc .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#rzscicfzej .gt_column_spanner_outer:last-child {
+#ubearanwyc .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#rzscicfzej .gt_column_spanner {
+#ubearanwyc .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -587,11 +856,11 @@ The following object is masked from 'package:readr':
   width: 100%;
 }
 
-#rzscicfzej .gt_spanner_row {
+#ubearanwyc .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#rzscicfzej .gt_group_heading {
+#ubearanwyc .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -617,7 +886,7 @@ The following object is masked from 'package:readr':
   text-align: left;
 }
 
-#rzscicfzej .gt_empty_group_heading {
+#ubearanwyc .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -632,15 +901,15 @@ The following object is masked from 'package:readr':
   vertical-align: middle;
 }
 
-#rzscicfzej .gt_from_md > :first-child {
+#ubearanwyc .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#rzscicfzej .gt_from_md > :last-child {
+#ubearanwyc .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#rzscicfzej .gt_row {
+#ubearanwyc .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -659,7 +928,7 @@ The following object is masked from 'package:readr':
   overflow-x: hidden;
 }
 
-#rzscicfzej .gt_stub {
+#ubearanwyc .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -672,7 +941,7 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#rzscicfzej .gt_stub_row_group {
+#ubearanwyc .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -686,15 +955,15 @@ The following object is masked from 'package:readr':
   vertical-align: top;
 }
 
-#rzscicfzej .gt_row_group_first td {
+#ubearanwyc .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#rzscicfzej .gt_row_group_first th {
+#ubearanwyc .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#rzscicfzej .gt_summary_row {
+#ubearanwyc .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -704,16 +973,16 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#rzscicfzej .gt_first_summary_row {
+#ubearanwyc .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#rzscicfzej .gt_first_summary_row.thick {
+#ubearanwyc .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#rzscicfzej .gt_last_summary_row {
+#ubearanwyc .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -723,7 +992,7 @@ The following object is masked from 'package:readr':
   border-bottom-color: #D3D3D3;
 }
 
-#rzscicfzej .gt_grand_summary_row {
+#ubearanwyc .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -733,7 +1002,7 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#rzscicfzej .gt_first_grand_summary_row {
+#ubearanwyc .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -743,7 +1012,7 @@ The following object is masked from 'package:readr':
   border-top-color: #D3D3D3;
 }
 
-#rzscicfzej .gt_last_grand_summary_row_top {
+#ubearanwyc .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -753,11 +1022,11 @@ The following object is masked from 'package:readr':
   border-bottom-color: #D3D3D3;
 }
 
-#rzscicfzej .gt_striped {
+#ubearanwyc .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#rzscicfzej .gt_table_body {
+#ubearanwyc .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -766,7 +1035,7 @@ The following object is masked from 'package:readr':
   border-bottom-color: #D3D3D3;
 }
 
-#rzscicfzej .gt_footnotes {
+#ubearanwyc .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -780,7 +1049,7 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#rzscicfzej .gt_footnote {
+#ubearanwyc .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -789,7 +1058,7 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#rzscicfzej .gt_sourcenotes {
+#ubearanwyc .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -803,7 +1072,7 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#rzscicfzej .gt_sourcenote {
+#ubearanwyc .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -811,72 +1080,72 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#rzscicfzej .gt_left {
+#ubearanwyc .gt_left {
   text-align: left;
 }
 
-#rzscicfzej .gt_center {
+#ubearanwyc .gt_center {
   text-align: center;
 }
 
-#rzscicfzej .gt_right {
+#ubearanwyc .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#rzscicfzej .gt_font_normal {
+#ubearanwyc .gt_font_normal {
   font-weight: normal;
 }
 
-#rzscicfzej .gt_font_bold {
+#ubearanwyc .gt_font_bold {
   font-weight: bold;
 }
 
-#rzscicfzej .gt_font_italic {
+#ubearanwyc .gt_font_italic {
   font-style: italic;
 }
 
-#rzscicfzej .gt_super {
+#ubearanwyc .gt_super {
   font-size: 65%;
 }
 
-#rzscicfzej .gt_footnote_marks {
+#ubearanwyc .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#rzscicfzej .gt_asterisk {
+#ubearanwyc .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#rzscicfzej .gt_indent_1 {
+#ubearanwyc .gt_indent_1 {
   text-indent: 5px;
 }
 
-#rzscicfzej .gt_indent_2 {
+#ubearanwyc .gt_indent_2 {
   text-indent: 10px;
 }
 
-#rzscicfzej .gt_indent_3 {
+#ubearanwyc .gt_indent_3 {
   text-indent: 15px;
 }
 
-#rzscicfzej .gt_indent_4 {
+#ubearanwyc .gt_indent_4 {
   text-indent: 20px;
 }
 
-#rzscicfzej .gt_indent_5 {
+#ubearanwyc .gt_indent_5 {
   text-indent: 25px;
 }
 
-#rzscicfzej .katex-display {
+#ubearanwyc .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#rzscicfzej div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#ubearanwyc div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -970,7 +1239,7 @@ The following object is masked from 'package:readr':
 </div>
 <section id="exploratory-questions---inline-values" class="level3">
 <h3 class="anchored" data-anchor-id="exploratory-questions---inline-values">Exploratory Questions - Inline Values</h3>
-<p><strong>Question 1: What date range is covered by this data set?</strong></p>
+<p><strong>What date range is covered by this data set?</strong></p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -988,7 +1257,7 @@ The following object is masked from 'package:readr':
 </div>
 </div>
 <p>The data set covers the period from 2023-01-01 to 2026-06-30.</p>
-<p><strong>Question 2: How many different shows and movies are covered in this data set?</strong></p>
+<p><strong>How many different shows and movies are covered in this data set?</strong></p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1003,9 +1272,9 @@ The following object is masked from 'package:readr':
 </div>
 </div>
 <p>There are 24427 different shows and movies.</p>
-<p><strong>Question 3: How many total hours have been spent watching shows from the Bridgerton universe?</strong></p>
+<p><strong>How many total hours have been spent watching shows from the Bridgerton universe?</strong></p>
 <p>4,862,800,000 hours have been spent watching titles from the Bridgerton universe.</p>
-<p><strong>Question 4: How many total hours have been spent watching the five seasons of Stranger Things??</strong></p>
+<p><strong>How many total hours have been spent watching the five seasons of Stranger Things??</strong></p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1047,7 +1316,7 @@ The following object is masked from 'package:readr':
 </div>
 </div>
 <p>Total hours spent watching the five seasons of stranger things is 5,548,500,000.</p>
-<p><strong>Question 5: What percentage of total watch time was spent on the Top 10 titles of 2026H1?</strong></p>
+<p><strong>What percentage of total watch time was spent on the Top 10 titles of 2026H1?</strong></p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1064,7 +1333,7 @@ The following object is masked from 'package:readr':
 </details>
 </div>
 <p>The percentage of total watch time of the top 10 titles in H1 2026 is 6.70%</p>
-<p><strong>Question 6: What fraction of Netflix’s catalog is globally available?</strong></p>
+<p><strong>What fraction of Netflix’s catalog is globally available?</strong></p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1086,7 +1355,7 @@ The following object is masked from 'package:readr':
 </section>
 <section id="exploratory-questions---table-answers" class="level3">
 <h3 class="anchored" data-anchor-id="exploratory-questions---table-answers">Exploratory Questions - Table Answers</h3>
-<p><strong>Question 1 : What was the top title (by total hours viewed) in each period and what fraction of total viewership did it capture?</strong></p>
+<p><strong>What was the top title (by total hours viewed) in each period and what fraction of total viewership did it capture?</strong></p>
 <p>Finding total hours viewed by summing each period, then taking individual titles and dividing them to find viewership share.</p>
 <div class="cell">
 <details class="code-fold">
@@ -1156,23 +1425,23 @@ The following object is masked from 'package:readr':
 <span id="cb21-63"><a href="#cb21-63" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
-<div id="duqxtvvjdx" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#duqxtvvjdx table {
+<div id="xrphhytluh" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#xrphhytluh table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#duqxtvvjdx thead, #duqxtvvjdx tbody, #duqxtvvjdx tfoot, #duqxtvvjdx tr, #duqxtvvjdx td, #duqxtvvjdx th {
+#xrphhytluh thead, #xrphhytluh tbody, #xrphhytluh tfoot, #xrphhytluh tr, #xrphhytluh td, #xrphhytluh th {
   border-style: none;
 }
 
-#duqxtvvjdx p {
+#xrphhytluh p {
   margin: 0;
   padding: 0;
 }
 
-#duqxtvvjdx .gt_table {
+#xrphhytluh .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -1198,12 +1467,12 @@ The following object is masked from 'package:readr':
   border-left-color: #D3D3D3;
 }
 
-#duqxtvvjdx .gt_caption {
+#xrphhytluh .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#duqxtvvjdx .gt_title {
+#xrphhytluh .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1215,7 +1484,7 @@ The following object is masked from 'package:readr':
   border-bottom-width: 0;
 }
 
-#duqxtvvjdx .gt_subtitle {
+#xrphhytluh .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1227,7 +1496,7 @@ The following object is masked from 'package:readr':
   border-top-width: 0;
 }
 
-#duqxtvvjdx .gt_heading {
+#xrphhytluh .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1239,13 +1508,13 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#duqxtvvjdx .gt_bottom_border {
+#xrphhytluh .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#duqxtvvjdx .gt_col_headings {
+#xrphhytluh .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1260,7 +1529,7 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#duqxtvvjdx .gt_col_heading {
+#xrphhytluh .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1280,7 +1549,7 @@ The following object is masked from 'package:readr':
   overflow-x: hidden;
 }
 
-#duqxtvvjdx .gt_column_spanner_outer {
+#xrphhytluh .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1292,15 +1561,15 @@ The following object is masked from 'package:readr':
   padding-right: 4px;
 }
 
-#duqxtvvjdx .gt_column_spanner_outer:first-child {
+#xrphhytluh .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#duqxtvvjdx .gt_column_spanner_outer:last-child {
+#xrphhytluh .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#duqxtvvjdx .gt_column_spanner {
+#xrphhytluh .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1312,11 +1581,11 @@ The following object is masked from 'package:readr':
   width: 100%;
 }
 
-#duqxtvvjdx .gt_spanner_row {
+#xrphhytluh .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#duqxtvvjdx .gt_group_heading {
+#xrphhytluh .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1342,7 +1611,7 @@ The following object is masked from 'package:readr':
   text-align: left;
 }
 
-#duqxtvvjdx .gt_empty_group_heading {
+#xrphhytluh .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1357,15 +1626,15 @@ The following object is masked from 'package:readr':
   vertical-align: middle;
 }
 
-#duqxtvvjdx .gt_from_md > :first-child {
+#xrphhytluh .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#duqxtvvjdx .gt_from_md > :last-child {
+#xrphhytluh .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#duqxtvvjdx .gt_row {
+#xrphhytluh .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1384,7 +1653,7 @@ The following object is masked from 'package:readr':
   overflow-x: hidden;
 }
 
-#duqxtvvjdx .gt_stub {
+#xrphhytluh .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1397,7 +1666,7 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#duqxtvvjdx .gt_stub_row_group {
+#xrphhytluh .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1411,15 +1680,15 @@ The following object is masked from 'package:readr':
   vertical-align: top;
 }
 
-#duqxtvvjdx .gt_row_group_first td {
+#xrphhytluh .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#duqxtvvjdx .gt_row_group_first th {
+#xrphhytluh .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#duqxtvvjdx .gt_summary_row {
+#xrphhytluh .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1429,16 +1698,16 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#duqxtvvjdx .gt_first_summary_row {
+#xrphhytluh .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#duqxtvvjdx .gt_first_summary_row.thick {
+#xrphhytluh .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#duqxtvvjdx .gt_last_summary_row {
+#xrphhytluh .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1448,7 +1717,7 @@ The following object is masked from 'package:readr':
   border-bottom-color: #D3D3D3;
 }
 
-#duqxtvvjdx .gt_grand_summary_row {
+#xrphhytluh .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1458,7 +1727,7 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#duqxtvvjdx .gt_first_grand_summary_row {
+#xrphhytluh .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1468,7 +1737,7 @@ The following object is masked from 'package:readr':
   border-top-color: #D3D3D3;
 }
 
-#duqxtvvjdx .gt_last_grand_summary_row_top {
+#xrphhytluh .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1478,11 +1747,11 @@ The following object is masked from 'package:readr':
   border-bottom-color: #D3D3D3;
 }
 
-#duqxtvvjdx .gt_striped {
+#xrphhytluh .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#duqxtvvjdx .gt_table_body {
+#xrphhytluh .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1491,7 +1760,7 @@ The following object is masked from 'package:readr':
   border-bottom-color: #D3D3D3;
 }
 
-#duqxtvvjdx .gt_footnotes {
+#xrphhytluh .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1505,7 +1774,7 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#duqxtvvjdx .gt_footnote {
+#xrphhytluh .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -1514,7 +1783,7 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#duqxtvvjdx .gt_sourcenotes {
+#xrphhytluh .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1528,7 +1797,7 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#duqxtvvjdx .gt_sourcenote {
+#xrphhytluh .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1536,72 +1805,72 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#duqxtvvjdx .gt_left {
+#xrphhytluh .gt_left {
   text-align: left;
 }
 
-#duqxtvvjdx .gt_center {
+#xrphhytluh .gt_center {
   text-align: center;
 }
 
-#duqxtvvjdx .gt_right {
+#xrphhytluh .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#duqxtvvjdx .gt_font_normal {
+#xrphhytluh .gt_font_normal {
   font-weight: normal;
 }
 
-#duqxtvvjdx .gt_font_bold {
+#xrphhytluh .gt_font_bold {
   font-weight: bold;
 }
 
-#duqxtvvjdx .gt_font_italic {
+#xrphhytluh .gt_font_italic {
   font-style: italic;
 }
 
-#duqxtvvjdx .gt_super {
+#xrphhytluh .gt_super {
   font-size: 65%;
 }
 
-#duqxtvvjdx .gt_footnote_marks {
+#xrphhytluh .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#duqxtvvjdx .gt_asterisk {
+#xrphhytluh .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#duqxtvvjdx .gt_indent_1 {
+#xrphhytluh .gt_indent_1 {
   text-indent: 5px;
 }
 
-#duqxtvvjdx .gt_indent_2 {
+#xrphhytluh .gt_indent_2 {
   text-indent: 10px;
 }
 
-#duqxtvvjdx .gt_indent_3 {
+#xrphhytluh .gt_indent_3 {
   text-indent: 15px;
 }
 
-#duqxtvvjdx .gt_indent_4 {
+#xrphhytluh .gt_indent_4 {
   text-indent: 20px;
 }
 
-#duqxtvvjdx .gt_indent_5 {
+#xrphhytluh .gt_indent_5 {
   text-indent: 25px;
 }
 
-#duqxtvvjdx .katex-display {
+#xrphhytluh .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#duqxtvvjdx div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#xrphhytluh div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -1675,7 +1944,7 @@ The following object is masked from 'package:readr':
 </div>
 </div>
 </div>
-<p><strong>Question 2 : How has Netflix’s catalog changed in size over the periods for which we have data? You should consider both the number of titles and the total runtime of content?</strong></p>
+<p><strong>How has Netflix’s catalog changed in size over the periods for which we have data? You should consider both the number of titles and the total runtime of content?</strong></p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1740,23 +2009,23 @@ The following object is masked from 'package:readr':
 <span id="cb22-59"><a href="#cb22-59" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
-<div id="beuvwzqmeb" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#beuvwzqmeb table {
+<div id="ygwlbvxgyw" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#ygwlbvxgyw table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#beuvwzqmeb thead, #beuvwzqmeb tbody, #beuvwzqmeb tfoot, #beuvwzqmeb tr, #beuvwzqmeb td, #beuvwzqmeb th {
+#ygwlbvxgyw thead, #ygwlbvxgyw tbody, #ygwlbvxgyw tfoot, #ygwlbvxgyw tr, #ygwlbvxgyw td, #ygwlbvxgyw th {
   border-style: none;
 }
 
-#beuvwzqmeb p {
+#ygwlbvxgyw p {
   margin: 0;
   padding: 0;
 }
 
-#beuvwzqmeb .gt_table {
+#ygwlbvxgyw .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -1782,12 +2051,12 @@ The following object is masked from 'package:readr':
   border-left-color: #D3D3D3;
 }
 
-#beuvwzqmeb .gt_caption {
+#ygwlbvxgyw .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#beuvwzqmeb .gt_title {
+#ygwlbvxgyw .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1799,7 +2068,7 @@ The following object is masked from 'package:readr':
   border-bottom-width: 0;
 }
 
-#beuvwzqmeb .gt_subtitle {
+#ygwlbvxgyw .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1811,7 +2080,7 @@ The following object is masked from 'package:readr':
   border-top-width: 0;
 }
 
-#beuvwzqmeb .gt_heading {
+#ygwlbvxgyw .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1823,13 +2092,13 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#beuvwzqmeb .gt_bottom_border {
+#ygwlbvxgyw .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#beuvwzqmeb .gt_col_headings {
+#ygwlbvxgyw .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1844,7 +2113,7 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#beuvwzqmeb .gt_col_heading {
+#ygwlbvxgyw .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1864,7 +2133,7 @@ The following object is masked from 'package:readr':
   overflow-x: hidden;
 }
 
-#beuvwzqmeb .gt_column_spanner_outer {
+#ygwlbvxgyw .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1876,15 +2145,15 @@ The following object is masked from 'package:readr':
   padding-right: 4px;
 }
 
-#beuvwzqmeb .gt_column_spanner_outer:first-child {
+#ygwlbvxgyw .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#beuvwzqmeb .gt_column_spanner_outer:last-child {
+#ygwlbvxgyw .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#beuvwzqmeb .gt_column_spanner {
+#ygwlbvxgyw .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1896,11 +2165,11 @@ The following object is masked from 'package:readr':
   width: 100%;
 }
 
-#beuvwzqmeb .gt_spanner_row {
+#ygwlbvxgyw .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#beuvwzqmeb .gt_group_heading {
+#ygwlbvxgyw .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1926,7 +2195,7 @@ The following object is masked from 'package:readr':
   text-align: left;
 }
 
-#beuvwzqmeb .gt_empty_group_heading {
+#ygwlbvxgyw .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1941,15 +2210,15 @@ The following object is masked from 'package:readr':
   vertical-align: middle;
 }
 
-#beuvwzqmeb .gt_from_md > :first-child {
+#ygwlbvxgyw .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#beuvwzqmeb .gt_from_md > :last-child {
+#ygwlbvxgyw .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#beuvwzqmeb .gt_row {
+#ygwlbvxgyw .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1968,7 +2237,7 @@ The following object is masked from 'package:readr':
   overflow-x: hidden;
 }
 
-#beuvwzqmeb .gt_stub {
+#ygwlbvxgyw .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1981,7 +2250,7 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#beuvwzqmeb .gt_stub_row_group {
+#ygwlbvxgyw .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1995,15 +2264,15 @@ The following object is masked from 'package:readr':
   vertical-align: top;
 }
 
-#beuvwzqmeb .gt_row_group_first td {
+#ygwlbvxgyw .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#beuvwzqmeb .gt_row_group_first th {
+#ygwlbvxgyw .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#beuvwzqmeb .gt_summary_row {
+#ygwlbvxgyw .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2013,16 +2282,16 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#beuvwzqmeb .gt_first_summary_row {
+#ygwlbvxgyw .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#beuvwzqmeb .gt_first_summary_row.thick {
+#ygwlbvxgyw .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#beuvwzqmeb .gt_last_summary_row {
+#ygwlbvxgyw .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2032,7 +2301,7 @@ The following object is masked from 'package:readr':
   border-bottom-color: #D3D3D3;
 }
 
-#beuvwzqmeb .gt_grand_summary_row {
+#ygwlbvxgyw .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -2042,7 +2311,7 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#beuvwzqmeb .gt_first_grand_summary_row {
+#ygwlbvxgyw .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2052,7 +2321,7 @@ The following object is masked from 'package:readr':
   border-top-color: #D3D3D3;
 }
 
-#beuvwzqmeb .gt_last_grand_summary_row_top {
+#ygwlbvxgyw .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -2062,11 +2331,11 @@ The following object is masked from 'package:readr':
   border-bottom-color: #D3D3D3;
 }
 
-#beuvwzqmeb .gt_striped {
+#ygwlbvxgyw .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#beuvwzqmeb .gt_table_body {
+#ygwlbvxgyw .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -2075,7 +2344,7 @@ The following object is masked from 'package:readr':
   border-bottom-color: #D3D3D3;
 }
 
-#beuvwzqmeb .gt_footnotes {
+#ygwlbvxgyw .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2089,7 +2358,7 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#beuvwzqmeb .gt_footnote {
+#ygwlbvxgyw .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -2098,7 +2367,7 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#beuvwzqmeb .gt_sourcenotes {
+#ygwlbvxgyw .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -2112,7 +2381,7 @@ The following object is masked from 'package:readr':
   border-right-color: #D3D3D3;
 }
 
-#beuvwzqmeb .gt_sourcenote {
+#ygwlbvxgyw .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -2120,72 +2389,72 @@ The following object is masked from 'package:readr':
   padding-right: 5px;
 }
 
-#beuvwzqmeb .gt_left {
+#ygwlbvxgyw .gt_left {
   text-align: left;
 }
 
-#beuvwzqmeb .gt_center {
+#ygwlbvxgyw .gt_center {
   text-align: center;
 }
 
-#beuvwzqmeb .gt_right {
+#ygwlbvxgyw .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#beuvwzqmeb .gt_font_normal {
+#ygwlbvxgyw .gt_font_normal {
   font-weight: normal;
 }
 
-#beuvwzqmeb .gt_font_bold {
+#ygwlbvxgyw .gt_font_bold {
   font-weight: bold;
 }
 
-#beuvwzqmeb .gt_font_italic {
+#ygwlbvxgyw .gt_font_italic {
   font-style: italic;
 }
 
-#beuvwzqmeb .gt_super {
+#ygwlbvxgyw .gt_super {
   font-size: 65%;
 }
 
-#beuvwzqmeb .gt_footnote_marks {
+#ygwlbvxgyw .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#beuvwzqmeb .gt_asterisk {
+#ygwlbvxgyw .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#beuvwzqmeb .gt_indent_1 {
+#ygwlbvxgyw .gt_indent_1 {
   text-indent: 5px;
 }
 
-#beuvwzqmeb .gt_indent_2 {
+#ygwlbvxgyw .gt_indent_2 {
   text-indent: 10px;
 }
 
-#beuvwzqmeb .gt_indent_3 {
+#ygwlbvxgyw .gt_indent_3 {
   text-indent: 15px;
 }
 
-#beuvwzqmeb .gt_indent_4 {
+#ygwlbvxgyw .gt_indent_4 {
   text-indent: 20px;
 }
 
-#beuvwzqmeb .gt_indent_5 {
+#ygwlbvxgyw .gt_indent_5 {
   text-indent: 25px;
 }
 
-#beuvwzqmeb .katex-display {
+#ygwlbvxgyw .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#beuvwzqmeb div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#ygwlbvxgyw div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -2317,13 +2586,13 @@ The following object is masked from 'package:readr':
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mp01_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mp01_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>The number of titles significantly decreased from 2023H1 to 2023H2. After that change number of titles has increased at a smaller consistent rate. Run time has been consistently slowly increasing.</p>
-<p><strong>Question 3 : Which titles have had the most consistently high viewership across all periods? These shows are likely to be ‘staples’ that viewers fall back on as ‘comfort food’, e.g., re-runs of Friends.</strong></p>
+<p><strong>Which titles have had the most consistently high viewership across all periods? These shows are likely to be ‘staples’ that viewers fall back on as ‘comfort food’, e.g., re-runs of Friends.</strong></p>
 <p>Calculate the mean, minimum and standard deviation. To distinguish strong consisted viewership, rather than big spikes.</p>
 <div class="cell">
 <details class="code-fold">
@@ -2409,13 +2678,13 @@ The following object is masked from 'package:readr':
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mp01_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mp01_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>No surprise to see breaking bad and Lucifer on the list. The Filter list ensures high viewership with low variability because of the low SD. Positive association.</p>
-<p><strong>Question 4 : Within each period, what fraction of time was spent on ‘shows’ vs movies?</strong></p>
+<p><strong>Within each period, what fraction of time was spent on ‘shows’ vs movies?</strong></p>
 <p>If time is longer than 4 hours, it will mostly be a show. There are very long movies I want to avoid and most show seasons 6-12 episodes. Calculate the percentage of title per total hours viewed.</p>
 <div class="cell">
 <details class="code-fold">
@@ -2486,12 +2755,12 @@ The following object is masked from 'package:readr':
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mp01_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mp01_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<p><strong>Question 5 : How does the performance of live events compare to pre-taped content? Does the average live event draw more viewership than an average piece of pre-taped content? How about a ‘top tier’ live event vs ‘top tier’ pre-taped content?</strong></p>
+<p><strong>How does the performance of live events compare to pre-taped content? Does the average live event draw more viewership than an average piece of pre-taped content? How about a ‘top tier’ live event vs ‘top tier’ pre-taped content?</strong></p>
 <p>Creating a clear distinction of live content and not</p>
 <div class="cell">
 <details class="code-fold">
@@ -2563,7 +2832,7 @@ The following object is masked from 'package:readr':
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mp01_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mp01_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -2658,7 +2927,7 @@ The following object is masked from 'package:readr':
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="mp01_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="mp01_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
